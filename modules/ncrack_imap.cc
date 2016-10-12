@@ -31,7 +31,8 @@ imap_loop_read(nsock_pool nsp, Connection *con)
 		{
 			return 2;
 		}
-	if (!(memsearch((const char *)con->inbuf->get_dataptr(),"OK",con->inbuf->get_len()))) {
+	//OK Dovecot ready.\r\n
+	if (!(memsearch((const char *)con->inbuf->get_dataptr(),"OK\r\n",con->inbuf->get_len()))) {
 			return 1;
 		}
 			return 0;
@@ -73,7 +74,7 @@ ncrack_imap(nsock_pool nsp, Connection *con)
 			if (con->outbuf)
 				delete con->outbuf;
 			con->outbuf = new Buf();
-			con->outbuf->snprintf(2 + 5 + strlen(con->user), "USER %s\r\n", con->user);
+			con->outbuf->snprintf(5 + strlen(con->user), "USER %s\r\n", con->user);
 
 			nsock_write(nsp, nsi, ncrack_write_handler, IMAP_TIMEOUT, con, (const char *)con->outbuf->
 				get_dataptr(), con->outbuf->get_len());
