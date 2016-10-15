@@ -334,16 +334,16 @@ AC_CONFIG_SUBDIRS(opensshlib)
 # SSH, SMB, RDP modules rely on crypto functions which rely on OpenSSL, so
 # build them only in case the system has OpenSSL.
 MODULES_SRCS="ncrack_ssh.cc ncrack_smb.cc ncrack_rdp.cc ncrack_sip.cc \
-ncrack_psql.cc ncrack_mysql.cc ncrack_imap.cc"
+ncrack_psql.cc ncrack_mysql.cc"
 MODULES_OBJS="ncrack_ssh.o ncrack_smb.o ncrack_rdp.o ncrack_sip.o \
-ncrack_psql.o ncrack_mysql.o ncrack_imap.o"
+ncrack_psql.o ncrack_mysql.o"
 
 fi
 
 MODULES_SRCS="$MODULES_SRCS ncrack_ftp.cc ncrack_telnet.cc ncrack_http.cc \
-ncrack_pop3.cc ncrack_vnc.cc ncrack_redis.cc ncrack_winrm.cc ncrack_owa.cc"
+ncrack_pop3.cc ncrack_vnc.cc ncrack_redis.cc ncrack_winrm.cc ncrack_owa.cc ncrack_imap.cc"
 MODULES_OBJS="$MODULES_OBJS ncrack_ftp.o ncrack_telnet.o ncrack_http.o \
-ncrack_pop3.o ncrack_vnc.o ncrack_redis.o ncrack_winrm.o ncrack_owa.o"
+ncrack_pop3.o ncrack_vnc.o ncrack_redis.o ncrack_winrm.o ncrack_owa.o ncrack_imap.o"
 AC_SUBST(MODULES_SRCS)
 AC_SUBST(MODULES_OBJS)
 

@@ -755,6 +755,8 @@ call_module(nsock_pool nsp, Connection *con)
     ncrack_redis(nsp, con);
   else if (!strcmp(name, "winrm"))
     ncrack_winrm(nsp, con);
+	else if (!strcmp(name, "imap"))
+		ncrack_imap(nsp, con);
 #if HAVE_OPENSSL
   else if (!strcmp(name, "pop3s"))
     ncrack_pop3(nsp, con);
@@ -774,8 +776,6 @@ call_module(nsock_pool nsp, Connection *con)
     ncrack_rdp(nsp, con);
   else if (!strcmp(name, "smb") || !strcmp(name, "netbios-ssn"))
     ncrack_smb(nsp, con);
-	else if (!strcmp(name, "imap")) 
-		ncrack_imap(nsp, con);
 #endif
   else
     fatal("Invalid service module: %s", name);
