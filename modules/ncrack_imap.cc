@@ -74,7 +74,7 @@ ncrack_imap(nsock_pool nsp, Connection *con)
 			if (con->outbuf)
 				delete con->outbuf;
 			con->outbuf = new Buf();
-			con->outbuf->snprintf(12 + strlen(con->user) + strlen(con->pass), "01 LOGIN %s %s\r\n", con->user, con->pass);
+			con->outbuf->snprintf(10 + strlen(con->user) + strlen(con->pass), "01 LOGIN %s %s\r\n", con->user, con->pass);
 
 			nsock_write(nsp, nsi, ncrack_write_handler, IMAP_TIMEOUT, con, (const char *)con->outbuf->
 				get_dataptr(), con->outbuf->get_len());
@@ -106,7 +106,7 @@ ncrack_imap(nsock_pool nsp, Connection *con)
 			if (con->outbuf)
 				delete con->outbuf;
 			con->outbuf = new Buf();
-			con->outbuf->snprintf(7 + strlen(con->pass),"PASS %s\r\n",con->pass);
+			con->outbuf->snprintf(10 + strlen(con->user) + strlen(con->pass), "01 LOGIN %s %s\r\n",con->user, con->pass);
 
 			nsock_write(nsp, nsi, ncrack_write_handler, IMAP_TIMEOUT, con,
 					(const char *)con->outbuf->get_dataptr(), con->outbuf->get_len());
