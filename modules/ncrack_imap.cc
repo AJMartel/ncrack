@@ -22,20 +22,20 @@ static int
 imap_loop_read(nsock_pool nsp, Connection *con)
 {
 
-	if (con->inbuf == NULL || con->inbuf->get_len() < 3) {
-		nsock_read(nsp, con->niod, ncrack_read_handler, IMAP_TIMEOUT, con);
-		return -1;
-	}
+  if (con->inbuf == NULL || con->inbuf->get_len() < 3) {
+    nsock_read(nsp, con->niod, ncrack_read_handler, IMAP_TIMEOUT, con);
+    return -1;
+  }
 
-	if (memsearch((const char *)con->inbuf->get_dataptr(), "ERR",con->inbuf->get_len()))
-		{
-			return 2;
-		}
-	//OK Dovecot ready.\r\n
-	if (!(memsearch((const char *)con->inbuf->get_dataptr(),"OK\r\n",con->inbuf->get_len()))) {
-			return 1;
-		}
-			return 0;
+  if (memsearch((const char *)con->inbuf->get_dataptr(), "ERR",con->inbuf->get_len()))
+  {
+    return 2;
+  }
+  //OK Dovecot ready.\r\n
+  if (!(memsearch((const char *)con->inbuf->get_dataptr(),"OK\r\n",con->inbuf->get_len()))) {
+    return 1;
+  }
+  return 0;
 }
 
 
@@ -43,88 +43,88 @@ imap_loop_read(nsock_pool nsp, Connection *con)
 void
 ncrack_imap(nsock_pool nsp, Connection *con)
 {
-	int ret;
-	nsock_iod nsi = con->niod;
-	Service *serv = con->service;
-	
-	switch(con->state)
-	{
-		case IMAP_INIT:
-		
-			if (!con->login_attempts) {
+  int ret;
+  nsock_iod nsi = con->niod;
+  Service *serv = con->service;
 
-				if((imap_loop_read(nsp, con)) < 0) {
-						break;
-				}
-				
-				if (ret == 1) {
+  switch(con->state)
+  {
+    case IMAP_INIT:
 
-					if (o.debugging > 6){
-					error("%s Not imap or service was shutdown\n", serv->HostInfo());
-					return ncrack_module_end(nsp, con);
-				}
-			}
-		}
-		
-			con->state = IMAP_USER;
+      if (!con->login_attempts) {
 
-			delete con->inbuf;
-			con->inbuf = NULL;
+        if((imap_loop_read(nsp, con)) < 0) {
+          break;
+        }
 
-			if (con->outbuf)
-				delete con->outbuf;
-			con->outbuf = new Buf();
-			con->outbuf->snprintf(12 + strlen(con->user) + strlen(con->pass), "01 LOGIN %s %s\r\n", con->user, con->pass);
+        if (ret == 1) {
 
-			nsock_write(nsp, nsi, ncrack_write_handler, IMAP_TIMEOUT, con, (const char *)con->outbuf->
-				get_dataptr(), con->outbuf->get_len());
-			break;
-		
-		case IMAP_USER:
-			
-			if ((imap_loop_read(nsp, con)) < 0)
-				break;
+          if (o.debugging > 6){
+            error("%s Not imap or service was shutdown\n", serv->HostInfo());
+            return ncrack_module_end(nsp, con);
+          }
+        }
+      }
 
-			if (ret == 2) {
-				if (o.debugging > 6) {
-					error("%s Unknown user: %s\n", serv->HostInfo(), con->user);
-					return ncrack_module_end(nsp,con);
-							}
+      con->state = IMAP_USER;
 
-			if (ret == 1) {
-				if (o.debugging > 6) {
-					error("%s Unkown imap error for USER\n", serv->HostInfo());
-					return ncrack_module_end(nsp,con);
-				}
-			}
+      delete con->inbuf;
+      con->inbuf = NULL;
 
-			con->state = IMAP_FINI;
+      if (con->outbuf)
+        delete con->outbuf;
+      con->outbuf = new Buf();
+      con->outbuf->snprintf(12 + strlen(con->user) + strlen(con->pass), "01 LOGIN %s %s\r\n", con->user, con->pass);
 
-			delete con->inbuf;
-			con->inbuf = NULL;
+      nsock_write(nsp, nsi, ncrack_write_handler, IMAP_TIMEOUT, con, (const char *)con->outbuf->
+          get_dataptr(), con->outbuf->get_len());
+      break;
 
-			if (con->outbuf)
-				delete con->outbuf;
-			con->outbuf = new Buf();
-			con->outbuf->snprintf(12 + strlen(con->user) + strlen(con->pass), "01 LOGIN %s %s\r\n",con->user, con->pass);
+    case IMAP_USER:
 
-			nsock_write(nsp, nsi, ncrack_write_handler, IMAP_TIMEOUT, con,
-					(const char *)con->outbuf->get_dataptr(), con->outbuf->get_len());
-			break;
+      if ((imap_loop_read(nsp, con)) < 0)
+        break;
 
-		case IMAP_FINI:
+      if (ret == 2) {
+        if (o.debugging > 6) {
+          error("%s Unknown user: %s\n", serv->HostInfo(), con->user);
+          return ncrack_module_end(nsp,con);
+        }
 
-			if ((ret = imap_loop_read(nsp, con)) < 0)
-				break;
-			
-			if(ret == 0) 
-				con->auth_success = true;
+        if (ret == 1) {
+          if (o.debugging > 6) {
+            error("%s Unkown imap error for USER\n", serv->HostInfo());
+            return ncrack_module_end(nsp,con);
+          }
+        }
 
-			con->state = IMAP_INIT;
+        con->state = IMAP_FINI;
 
-			delete con->inbuf;
-			con->inbuf = NULL;
+        delete con->inbuf;
+        con->inbuf = NULL;
 
-			return ncrack_module_end(nsp, con);
-		}
-}}
+        if (con->outbuf)
+          delete con->outbuf;
+        con->outbuf = new Buf();
+        con->outbuf->snprintf(12 + strlen(con->user) + strlen(con->pass), "01 LOGIN %s %s\r\n",con->user, con->pass);
+
+        nsock_write(nsp, nsi, ncrack_write_handler, IMAP_TIMEOUT, con,
+            (const char *)con->outbuf->get_dataptr(), con->outbuf->get_len());
+        break;
+
+        case IMAP_FINI:
+
+        if ((ret = imap_loop_read(nsp, con)) < 0)
+          break;
+
+        if(ret == 0) 
+          con->auth_success = true;
+
+        con->state = IMAP_INIT;
+
+        delete con->inbuf;
+        con->inbuf = NULL;
+
+        return ncrack_module_end(nsp, con);
+      }
+  }}
