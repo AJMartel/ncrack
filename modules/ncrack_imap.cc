@@ -136,7 +136,7 @@ extern void ncrack_module_end(nsock_pool nsp, void *mydata);
 
 static int imap_loop_read(nsock_pool nsp, Connection *con);
 
-enum states { IMAP_INIT, IMAP_USER, IMAP_FINI };
+enum states { IMAP_INIT, IMAP_USER };
 
 static int
 imap_loop_read(nsock_pool nsp, Connection *con)
@@ -150,7 +150,6 @@ imap_loop_read(nsock_pool nsp, Connection *con)
   if (memsearch((const char *)con->inbuf->get_dataptr(),"NO",con->inbuf->get_len()))
     return 1;
 
-  printf("inbuf: %s\n", con->inbuf->get_dataptr());
   return 0;
 }
 
