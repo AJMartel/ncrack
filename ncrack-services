@@ -27,3 +27,4 @@ redis 6379/tcp
 winrm 5985/tcp
 winrm 5986/tcp
 imap 143/tcp
+cassandra 9160/thrift
