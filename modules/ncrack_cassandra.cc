@@ -146,10 +146,12 @@ cass_loop_read(nsock_pool nsp, Connection *con)
   if ((con->inbuf == NULL) || !(memsearch((const char *)con->inbuf->get_dataptr(),"\r\n",con->inbuf->get_len()))) {
     nsock_read(nsp, con->niod, ncrack_read_handler, cass_timeout, con);
     return -1;
+    printf("step1");
   }
 
   if (memsearch((const char *)con->inbuf->get_dataptr(),"Username and/or password are incorrect",con->inbuf->get_len()))
     return 1;
+    printf("step2");
 
   return 0;
 }
@@ -166,11 +168,11 @@ ncrack_cassandra(nsock_pool nsp, Connection *con)
   {
     case CASS_INIT:
 
-     if (!con->login_attempts) {
-      if ((cass_loop_read(nsp, con)) < 0) {
+    /* if (!con->login_attempts) {
+      if ((cass_loop_read(nsp, con)) = 0) {
         break;
       }
-    }
+    }*/
 
     con->state = CASS_USER;
 
@@ -180,7 +182,7 @@ ncrack_cassandra(nsock_pool nsp, Connection *con)
     if (con->outbuf)
       delete con->outbuf;
     con->outbuf = new Buf();
-    con->outbuf->snprintf(26 + strlen(con->user) + strlen(con->pass), "login username %s password %s", con->user, con->pass);
+    con->outbuf->snprintf(25 + strlen(con->user) + strlen(con->pass), "login username %s password %s", con->user, con->pass);
 
     nsock_write(nsp, nsi, ncrack_write_handler, cass_timeout, con, (const char *)con->outbuf->
         get_dataptr(), con->outbuf->get_len());
