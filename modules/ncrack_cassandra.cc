@@ -134,7 +134,7 @@ extern void ncrack_read_handler(nsock_pool nsp, nsock_event nse, void *mydata);
 extern void ncrack_write_handler(nsock_pool nsp, nsock_event nse, void *mydata);
 extern void ncrack_module_end(nsock_pool nsp, void *mydata);
 
-/*static int cass_loop_read(nsock_pool nsp, Connection *con);*/
+static int cass_loop_read(nsock_pool nsp, Connection *con);
 
 enum states { CASS_INIT, CASS_USER };
 
