@@ -182,7 +182,7 @@ ncrack_cassandra(nsock_pool nsp, Connection *con)
     if (con->outbuf)
       delete con->outbuf;
     con->outbuf = new Buf();
-    con->outbuf->snprintf(25 + strlen(con->user) + strlen(con->pass), "login username %s password %s", con->user, con->pass);
+    con->outbuf-snprintf(65 + strlen(con->user) + strlen(con->pass) , con->user, con->pass);
 
     nsock_write(nsp, nsi, ncrack_write_handler, cass_timeout, con, (const char *)con->outbuf->
         get_dataptr(), con->outbuf->get_len());
