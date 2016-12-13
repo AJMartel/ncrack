@@ -1,5 +1,5 @@
 /***************************************************************************
- * ncrack_imap.cc -- ncrack module for the imap protocol                   *
+ * ncrack_cassandra.cc -- ncrack module for the cassandra service          *
  * created by barrend                                                      *
  *                                                                         *
  ***********************important nmap license terms************************
@@ -143,10 +143,11 @@ enum states { CASS_INIT, CASS_USER };
 
 struct cass_CALL {
 
-  uint16_t Version;
-  uint16_t Message_type;
-  uint16_t Length;
-  uint16_t Sequence_Id;
+  uint16_t version;
+  uint16_t message_type;
+  uint16_t length;
+  uint16_t method;
+  uint16_t sequence_id;
 };
 
 /*struct cass_data {
@@ -184,29 +185,49 @@ cass_loop_read(nsock_pool nsp, Connection *con)
   return 0;
 }
 
+/*static void
+cass_encode_CALL(struct cass_CALL c, Buf *buf) {
+  uint16_t u16;
+  u16 = htonl(c.Version);
+  memcpy(buf+2, &u16, 2);
+  u16 = htonl(c.Message_type);
+  memcpy(buf+1, &u16, 1);
+  u16 = htonl(c.Length);
+  memcpy(buf+4, &u16, 4);
+  u16 = htonl(c.method);
+  memcpy(buf+5, &u16, 5);
+  u16 = htonl(c.Sequence_Id);
+  memcpy(buf+4, &u16, 4);
+}*/
 static void cass_encode_CALL(Buf *buf) {
 
    // uint16_t u16;
     
     // cass_CALL call;
-  
     //cass.version = 0x8001;
-    buf->snprintf(2,"%c",8001);
+    buf->snprintf(2,"%d%d", 80, 01);
     //cass.message_type = CALL(1);
-    buf->snprintf(1,"CALL (1)");
+    buf->snprintf(1, "%s", "CALL (1)");
     //cass.length = 5;
-    buf->snprintf(4,"%c %c %c %c",0, 0, 0, 5);
+    buf->snprintf(4,"%c %c %c %c", 0, 0, 0, 5);
     //cass.method = login;
-    buf->snprintf(5,"login");  
+    buf->snprintf(5, "login");  
     //cass.sequence_id = 0;
     buf->snprintf(4,"%c%c%c%c",0,0,0,0);
     
   }
- /* static void cass_encode_data(struct data d, char Buf()){
   
-    cass_data data;
-  
-  }*/
+/*static void
+cass_encode_CALL(Connection *con, Buf *buf)
+{
+  cass_CALL c;
+  c.version = 8001;
+  c.message_type = 1;
+  c.length = 0005;
+  c.method = snprintf(5, "%s", "login");
+  c.sequence_id = 0;
+  con->outbuf->append(&c, sizeof(cass_CALL));
+}*/
 void
 ncrack_cassandra(nsock_pool nsp, Connection *con)
 {
@@ -215,8 +236,8 @@ ncrack_cassandra(nsock_pool nsp, Connection *con)
 
   switch(con->state)
   {
-  /*  case CASS_INIT:
-
+    case CASS_INIT:
+/*
      if (!con->login_attempts) {
       if ((cass_loop_read(nsp, con)) = 0) {
         break;
