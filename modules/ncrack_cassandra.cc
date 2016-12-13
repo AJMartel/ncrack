@@ -126,7 +126,7 @@
 #include "Service.h"
 #include "modules.h"
 
-#define cass_timeout 20000 //here
+#define CASS_TIMEOUT 20000 //here
 
 extern NcrackOps o;
 
@@ -135,43 +135,44 @@ extern void ncrack_write_handler(nsock_pool nsp, nsock_event nse, void *mydata);
 extern void ncrack_module_end(nsock_pool nsp, void *mydata);
 
 static int cass_loop_read(nsock_pool nsp, Connection *con);
-//static void cass_encode_CALL;
-//static void cass_encode_data;
+static void cass_encode_CALL(Buf *buf);
+//static void cass_encode_data(struct call d, char Buf());
+    
 
 enum states { CASS_INIT, CASS_USER };
 
 struct cass_CALL {
 
-  uint8_t Version;
-  uint8_t Message_type;
-  uint8_t Length;
-  uint8_t Sequence_Id;
+  uint16_t Version;
+  uint16_t Message_type;
+  uint16_t Length;
+  uint16_t Sequence_Id;
 };
 
-struct cass_data {
+/*struct cass_data {
   
-  uint8_t T_STRUCT;
-  uint8_t Field_Id;
+  uint16_t T_STRUCT;
+  uint16_t Field_Id;
   struct Struct {
-      uint8_t T_MAP;
-      uint8_t Field_Id;
+      uint16_t T_MAP;
+      uint16_t Field_Id;
       struct Map {
-          uint8_t T_UTF7;
-          uint8_t Number_of_Map_Items;
-          uint8_t Length;
-          uint8_t UTF7_String;
+          uint16_t T_UTF7;
+          uint16_t Number_of_Map_Items;
+          uint16_t Length;
+          uint16_t UTF7_String;
           };
-       uint8_t T_STOP; 
+       uint16_t T_STOP; 
       };
-    uint8_t T_STOP;
-};
+    uint16_t T_STOP;
+};*/
   
 static int
 cass_loop_read(nsock_pool nsp, Connection *con)
 {
 
   if ((con->inbuf == NULL) || !(memsearch((const char *)con->inbuf->get_dataptr(),"\r\n",con->inbuf->get_len()))) {
-    nsock_read(nsp, con->niod, ncrack_read_handler, cass_timeout, con);
+    nsock_read(nsp, con->niod, ncrack_read_handler, CASS_TIMEOUT, con);
     return -1;
     printf("step1");
   }
@@ -183,6 +184,29 @@ cass_loop_read(nsock_pool nsp, Connection *con)
   return 0;
 }
 
+static void cass_encode_CALL(Buf *buf) {
+
+   // uint16_t u16;
+    
+    // cass_CALL call;
+  
+    //cass.version = 0x8001;
+    buf->snprintf(2,"%c",8001);
+    //cass.message_type = CALL(1);
+    buf->snprintf(1,"CALL (1)");
+    //cass.length = 5;
+    buf->snprintf(4,"%c %c %c %c",0, 0, 0, 5);
+    //cass.method = login;
+    buf->snprintf(5,"login");  
+    //cass.sequence_id = 0;
+    buf->snprintf(4,"%c%c%c%c",0,0,0,0);
+    
+  }
+ /* static void cass_encode_data(struct data d, char Buf()){
+  
+    cass_data data;
+  
+  }*/
 void
 ncrack_cassandra(nsock_pool nsp, Connection *con)
 {
@@ -191,13 +215,13 @@ ncrack_cassandra(nsock_pool nsp, Connection *con)
 
   switch(con->state)
   {
-    case CASS_INIT:
+  /*  case CASS_INIT:
 
-    /* if (!con->login_attempts) {
+     if (!con->login_attempts) {
       if ((cass_loop_read(nsp, con)) = 0) {
         break;
       }
-    }*/
+    }
 
     con->state = CASS_USER;
 
@@ -205,30 +229,10 @@ ncrack_cassandra(nsock_pool nsp, Connection *con)
     con->inbuf = NULL;
 
     if (con->outbuf)
-      delete con->outbuf;
+      delete con->outbuf;*/
     con->outbuf = new Buf();
-    
-    static void cass_encode_CALL(struct call c, char Buf()) {
-
-    uint8_t u8;
-    
-    cass_CALL call;
-  
-    cass.version = 0x8001;
-    cass.message_type = CALL(1);
-    cass.length = 5;
-    cass.method = login;
-    cass.sequence_id = 0;
-
-    con->outbuf->append(&call, sizeof(cass_CALL));
-  }
-  static void cass_encode_data(struct data d, char Buf()){
-  
-    cass_data data;
-  
-  }
-
-    nsock_write(nsp, nsi, ncrack_write_handler, cass_timeout, con, (const char *)con->outbuf->
+    cass_encode_CALL(con->outbuf);
+    nsock_write(nsp, nsi, ncrack_write_handler, CASS_TIMEOUT, con, (const char *)con->outbuf->
         get_dataptr(), con->outbuf->get_len());
     break;
 
