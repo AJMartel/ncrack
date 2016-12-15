@@ -143,11 +143,11 @@ enum states { CASS_INIT, CASS_USER };
 
 struct cass_CALL {
 
-  uint16_t version;
-  uint16_t message_type;
-  uint16_t length;
-  uint16_t method;
-  uint16_t sequence_id;
+  uint8_t version;
+  uint8_t message_type;
+  uint8_t length;
+  uint8_t method;
+  uint8_t sequence_id;
 };
 
 /*struct cass_data {
@@ -205,16 +205,16 @@ static void cass_encode_CALL(Buf *buf) {
     
     // cass_CALL call;
     //cass.version = 0x8001;
-    buf->snprintf(2,"%d%d", 80, 01);
+    buf->snprintf(2,"%c%c",8,1);
     //cass.message_type = CALL(1);
-    buf->snprintf(1, "%s", "CALL (1)");
+    buf->snprintf(1, "%c", 1);
     //cass.length = 5;
-    buf->snprintf(4,"%c %c %c %c", 0, 0, 0, 5);
+    buf->snprintf(4,"%c%c%c%c",0,0,0,5);
     //cass.method = login;
     buf->snprintf(5, "login");  
     //cass.sequence_id = 0;
     buf->snprintf(4,"%c%c%c%c",0,0,0,0);
-    
+
   }
   
 /*static void
@@ -253,8 +253,7 @@ ncrack_cassandra(nsock_pool nsp, Connection *con)
       delete con->outbuf;*/
     con->outbuf = new Buf();
     cass_encode_CALL(con->outbuf);
-    nsock_write(nsp, nsi, ncrack_write_handler, CASS_TIMEOUT, con, (const char *)con->outbuf->
-        get_dataptr(), con->outbuf->get_len());
+    nsock_write(nsp, nsi, ncrack_write_handler, CASS_TIMEOUT, con, (const char *)con->outbuf->get_dataptr(), con->outbuf->get_len());
     break;
 
   case CASS_USER: 
