@@ -143,7 +143,7 @@ enum states { CASS_INIT, CASS_USER };
 
 typedef struct cass_CALL {
 
-  u_char version[2]; /*0x8001*/
+  u_char version[0]; /*0x8001*/
   uint16_t message_type;
   uint16_t length;
   u_char method[5];
