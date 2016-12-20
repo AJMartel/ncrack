@@ -136,36 +136,42 @@ extern void ncrack_module_end(nsock_pool nsp, void *mydata);
 
 static int cass_loop_read(nsock_pool nsp, Connection *con);
 static void cass_encode_CALL(Connection *con);
-//static void cass_encode_data(struct call d, char Buf());
+//static void cass_encode_data(Connection *con);
     
 
 enum states { CASS_INIT, CASS_USER };
 
 typedef struct cass_CALL {
 
-  u_char version=8001; /*0x8001*/
-  uint16_t message_type=1;
-  uint16_t length=5;
-  u_char method;
-  uint16_t sequence_id=0;
+  u_char version[2]; /*0x8001*/
+  uint16_t message_type;
+  uint16_t length;
+  u_char method[5];
+  uint16_t sequence_id;
 };
-
-/*struct cass_data {
+/*
+typedef struct cass_data {
   
-  uint16_t T_STRUCT;
-  uint16_t Field_Id;
-  struct Struct {
-      uint16_t T_MAP;
-      uint16_t Field_Id;
-      struct Map {
-          uint16_t T_UTF7;
-          uint16_t Number_of_Map_Items;
-          uint16_t Length;
-          uint16_t UTF7_String;
+  uint16_t t_struct;
+  uint16_t field_id;
+    struct  {
+      uint16_t t_map;
+      //uint16_t field_id;
+        struct  {
+          uint16_t t_utf7;
+          uint16_t number_of_map_items;
+          uint16_t length;
+          uint16_t utf7_string;
+          //uint16_t length;
+          //uint16_t utf7_string;
+          //uint16_t length;
+          //uint16_t utf7_string;
+          //uint16_t length;
+          //uint16_t utf7_string;
           };
-       uint16_t T_STOP; 
+      // uint16_t t_stop; 
       };
-    uint16_t T_STOP;
+    //uint16_t t_stop;
 };*/
   
 static int
@@ -187,24 +193,29 @@ cass_loop_read(nsock_pool nsp, Connection *con)
 
 static void
 cass_encode_CALL(Connection *con) {
-  cass_CALL c;
-  uint16_t u16;
-  u_char ch;
-
-  ch = htons(c.version);
-  memcpy(con+0, &ch, 2);
-  u16 = htons(c.message_type);
-  memcpy(con+0, &u16, 2);
-  u16 = htons(c.length);
-  memcpy(con+0, &u16, 2);
-  ch = htons(c.method);
-  memcpy(con+0, &ch, 2);
-  u16 = htons(c.sequence_id);
-  memcpy(con+0, &u16, 2);
-
-  con->outbuf->append(&c, sizeof(cass_CALL));
+  cass_CALL call;
+  
+  call.version[0] = 0x8001;
+  //call.version[1] = 01;
+  call.message_type = 1;
+  call.length = 5;
+  con->outbuf->append("login",5);
+  call.sequence_id=0;
+  //memset(call.sequence_id, 0, 4);
+  con->outbuf->append(&call, sizeof(cass_CALL));
 //  con->outbuf->snprintf(5, "login");
-} /*
+}
+/*static void
+cass_encode_data(Connection *con) {
+  cass_data data;
+  
+  data.t_struct = 0; //T_STRUCT (12)
+  data.field_id = 1; // Field Id: 1 
+  data.t_map = 0; // T_MAP (13) 
+  
+  con->outbuf->append(&data, sizeof(cass_data));  
+}*/
+ /*
 static void cass_encode_CALL(Connection *con) {
 
    // uint16_t u16;
@@ -264,6 +275,7 @@ ncrack_cassandra(nsock_pool nsp, Connection *con)
       delete con->outbuf;
     con->outbuf = new Buf();
     cass_encode_CALL(con);
+    //cass_encode_data(con);
     nsock_write(nsp, nsi, ncrack_write_handler, CASS_TIMEOUT, con, (const char *)con->outbuf->get_dataptr(), con->outbuf->get_len());
     break;
 
