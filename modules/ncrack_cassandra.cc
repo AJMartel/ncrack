@@ -218,18 +218,36 @@ cass_encode_data(Connection *con) {
   cass_data data;
   
   data.t_struct = 0; //T_STRUCT (12)=1byte
+  con->outbuf->append(&data.t_struct, sizeof(data.t_struct));  
   data.field_id = 1; // Field Id: 1 =2byte
+  con->outbuf->append(&data.field_id, sizeof(data.field_id));  
   data.Struct.t_map = 0; // T_MAP (13) =1byte
+  con->outbuf->append(&data.Struct.t_map, sizeof(data.Struct.t_map));  
   data.Struct.field_id = 1;
+  con->outbuf->append(&data.Struct.field_id, sizeof(data.Struct.field_id));  
   data.Struct.map.nomitems = 2; // 4 bytes [number of map items]  
+  con->outbuf->append(&data.Struct.map.nomitems, sizeof(data.Struct.map.nomitems));  
   data.Struct.map.length1= 8; //4byte
+  con->outbuf->append(&data.Struct.map.length1, sizeof(data.Struct.map.length1));  
   strncpy((char * )&data.Struct.map.string1[0],"username",8);  
-  con ->outbuf -> snprintf(strlen(con->user), "%s", con->user);  
+  con->outbuf->append(&data.Struct.map.string1, sizeof(data.Struct.map.string1));  
+  data.Struct.map.length2 = strlen(con->user);
+  con->outbuf->append(&data.Struct.map.length2, sizeof(data.Struct.map.length2));  
+
+  con->outbuf->snprintf(strlen(con->user), "%s", con->user);  
   //data.Struct.map.string2 = con->user;
   data.Struct.map.length3 = 8; //4byte
+  con->outbuf->append(&data.Struct.map.length3, sizeof(data.Struct.map.length3));  
   strncpy((char * )&data.Struct.map.string3[0],"password",8);  
-   
-  con->outbuf->append(&data, sizeof(cass_data));  
+  con->outbuf->append(&data.Struct.map.string3, sizeof(data.Struct.map.string3));  
+  data.Struct.map.length4 = strlen(con->pass); //4byte
+  con->outbuf->append(&data.Struct.map.length4, sizeof(data.Struct.map.length4));
+  con->outbuf->snprintf(strlen(con->pass), "%s", con->pass);  
+  data.Struct.t_stop = 0; //4byte
+  con->outbuf->append(&data.Struct.t_stop, sizeof(data.Struct.t_stop));
+  data.t_stop = 0;
+  con->outbuf->append(&data.t_stop, sizeof(data.t_stop));
+  //con->outbuf->append(&data, sizeof(cass_data));  
 }
  /*
 static void cass_encode_CALL(Connection *con) {
