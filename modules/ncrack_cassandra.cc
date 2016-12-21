@@ -143,36 +143,43 @@ enum states { CASS_INIT, CASS_USER };
 
 typedef struct cass_CALL {
 
-  u_char version[0]; /*0x8001*/
-  uint16_t message_type;
+  //u_char version[0]; /*0x8001*/
+  uint16_t version;
+  uint16_t call_id;
   uint16_t length;
   u_char method[5];
-  uint16_t sequence_id;
+  u_char sequence_id[0];
 };
-/*
+
 typedef struct cass_data {
   
   uint16_t t_struct;
   uint16_t field_id;
-    struct  {
-      uint16_t t_map;
-      //uint16_t field_id;
-        struct  {
-          uint16_t t_utf7;
-          uint16_t number_of_map_items;
-          uint16_t length;
-          uint16_t utf7_string;
-          //uint16_t length;
-          //uint16_t utf7_string;
-          //uint16_t length;
-          //uint16_t utf7_string;
-          //uint16_t length;
-          //uint16_t utf7_string;
-          };
-      // uint16_t t_stop; 
-      };
-    //uint16_t t_stop;
-};*/
+    union {  
+      struct  {
+        uint16_t t_map;
+        uint16_t field_id;
+          union{    
+            struct  {
+              uint16_t t_utf7;
+              uint16_t nomitems;
+              uint16_t length1;
+              u_char string1[8];
+              uint16_t length2;
+              u_char string2;
+              uint16_t length3;
+              u_char string3;
+              uint16_t length4;
+              u_char string4;
+                } map;
+              };
+        uint16_t t_stop; 
+      } Struct;
+    uint16_t t_stop;
+};
+};
+
+
   
 static int
 cass_loop_read(nsock_pool nsp, Connection *con)
@@ -195,26 +202,37 @@ static void
 cass_encode_CALL(Connection *con) {
   cass_CALL call;
   
-  call.version[0] = 0x8001;
-  //call.version[1] = 01;
-  call.message_type = 1;
-  call.length = 5;
-  con->outbuf->append("login",5);
-  call.sequence_id=0;
-  //memset(call.sequence_id, 0, 4);
+  call.version = 0x8001;
+  call.call_id = 1;
+  call.length = 4;
+  strncpy((char* )&call.method[0], "login", 5);
   con->outbuf->append(&call, sizeof(cass_CALL));
+  con->outbuf->snprintf(4,"%c%c%c%c", 0, 0, 0, 0);
+  //call.sequence_id=0;
+  //memset(call.sequence_id, 0, 4);
+  //con->outbuf->append(&call, sizeof(cass_CALL));
 //  con->outbuf->snprintf(5, "login");
 }
-/*static void
+static void
 cass_encode_data(Connection *con) {
   cass_data data;
   
-  data.t_struct = 0; //T_STRUCT (12)
-  data.field_id = 1; // Field Id: 1 
-  data.t_map = 0; // T_MAP (13) 
-  
+  data.t_struct = 0; //T_STRUCT (12)=1byte
+  data.field_id = 1; // Field Id: 1 =2byte
+  data.Struct.t_map = 0; // T_MAP (13) =1byte
+  data.Struct.field_id = 1;
+  data.Struct.map.nomitems = 2; // 4 bytes [number of map items]  
+  data.Struct.map.length1= 8; //4byte
+  strncpy((char * )&data.Struct.map.string1[0],"username",8);  
+  //data.Struct.map.length2= strlen(data.Struct.map.string2); //4byte
+  data.Struct.map.string2=snprintf(strlen(con->user), "%s", con->user);
+  //data.Struct.map.string2=snprintf(strlen(con->user),"%s", con->user);
+  //data.Struct.map.length3= 8; //4byte
+  //data.Struct.map.string3=snprintf(8, "password");
+  //data.Struct.map.length4= strlen(data.Struct.map.string4); //4byte
+  //data.Struct.map.string4=snprintf(strlen(con->user),"%s", con->pass);
   con->outbuf->append(&data, sizeof(cass_data));  
-}*/
+}
  /*
 static void cass_encode_CALL(Connection *con) {
 
@@ -233,23 +251,6 @@ static void cass_encode_CALL(Connection *con) {
     con->outbuf->snprintf(4,"%c%c%c%c",0,0,0,0);
 
   }*/
-/* 
-static void
-cass_encode_CALL(Connection *con) {
-  uint16_t u16;
-  cass_CALL c;
-  u16 = htons(c.version);
-  memcpy(con+0, &u16, 2);
-  u16 = htons(c.message_type);
-  memcpy(con+1, &u16, 1);
-  u16 = htons(c.length);
-  memcpy(con+4, &u16, 4);
-  u16 = htons(c.method);
-  memcpy(con+5, &u16, 5);
-  u16 = htons(c.sequence_id);
-  memcpy(con+4, &u16, 4);
-}
-*/
 void
 ncrack_cassandra(nsock_pool nsp, Connection *con)
 {
@@ -275,7 +276,7 @@ ncrack_cassandra(nsock_pool nsp, Connection *con)
       delete con->outbuf;
     con->outbuf = new Buf();
     cass_encode_CALL(con);
-    //cass_encode_data(con);
+    cass_encode_data(con);
     nsock_write(nsp, nsi, ncrack_write_handler, CASS_TIMEOUT, con, (const char *)con->outbuf->get_dataptr(), con->outbuf->get_len());
     break;
 
