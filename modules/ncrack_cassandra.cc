@@ -166,11 +166,11 @@ typedef struct cass_data {
               uint16_t length1;
               u_char string1[8];
               uint16_t length2;
-              u_char string2;
+              char* string2;
               uint16_t length3;
-              u_char string3;
+              u_char string3[8];
               uint16_t length4;
-              u_char string4;
+              char* string4;
                 } map;
               };
         uint16_t t_stop; 
@@ -224,13 +224,11 @@ cass_encode_data(Connection *con) {
   data.Struct.map.nomitems = 2; // 4 bytes [number of map items]  
   data.Struct.map.length1= 8; //4byte
   strncpy((char * )&data.Struct.map.string1[0],"username",8);  
-  //data.Struct.map.length2= strlen(data.Struct.map.string2); //4byte
-  data.Struct.map.string2=snprintf(strlen(con->user), "%s", con->user);
-  //data.Struct.map.string2=snprintf(strlen(con->user),"%s", con->user);
-  //data.Struct.map.length3= 8; //4byte
-  //data.Struct.map.string3=snprintf(8, "password");
-  //data.Struct.map.length4= strlen(data.Struct.map.string4); //4byte
-  //data.Struct.map.string4=snprintf(strlen(con->user),"%s", con->pass);
+  con ->outbuf -> snprintf(strlen(con->user), "%s", con->user);  
+  //data.Struct.map.string2 = con->user;
+  data.Struct.map.length3 = 8; //4byte
+  strncpy((char * )&data.Struct.map.string3[0],"password",8);  
+   
   con->outbuf->append(&data, sizeof(cass_data));  
 }
  /*
