@@ -143,12 +143,10 @@ enum states { CASS_INIT, CASS_USER };
 
 typedef struct cass_CALL {
 
-  //u_char version[0]; /*0x8001*/
   uint16_t version[1];
   uint8_t zero;
   uint8_t call_id;
   uint8_t length[4];
-  //u_char method[5];
   uint16_t sequence_id[2];
 };
 
@@ -156,28 +154,23 @@ typedef struct cass_data {
   
   uint16_t t_struct;
   uint16_t field_id;
-    union {  
-      struct  {
-        uint8_t t_map;
-        uint16_t field_id;
-          union{    
-            struct  {
-              int t_utf7;
-              uint8_t nomitems[4];
-              uint8_t length1[4];
-              u_char string1[8];
-              uint8_t length2[4];
-              char* string2;
-              uint8_t length3[4];
-              u_char string3[8];
-              uint8_t length4[4];
-              char* string4;
-                } map;
-              };
-        uint8_t t_stop; 
+  uint8_t t_stop;
+    struct {
+      uint8_t t_map;
+      uint16_t field_id;
+      uint8_t t_stop;
+      struct {
+        int t_utf71;
+        int t_utf72;
+        uint16_t nomitems;
+        uint8_t length1[4];
+        u_char string1[8];
+        uint8_t length2[4];
+        uint8_t length3[4];
+        u_char string3[8];
+        uint8_t length4[4];
+        } map;
       } Struct;
-    uint8_t t_stop;
-};
 };
 
 
@@ -234,13 +227,14 @@ cass_encode_data(Connection *con) {
   con->outbuf->append(&data.Struct.t_map, sizeof(data.Struct.t_map));  
   data.Struct.field_id = 1;
   con->outbuf->append(&data.Struct.field_id, sizeof(data.Struct.field_id));  
-  data.Struct.map.t_utf7 = 11;
-  
-  con->outbuf->append(&data.Struct.map.t_utf7, sizeof(data.Struct.map.t_utf7));  
-  data.Struct.map.nomitems[0] = 0;
-  data.Struct.map.nomitems[1] = 0;
-  data.Struct.map.nomitems[2] = 0;
-  data.Struct.map.nomitems[3] = 2;
+  data.Struct.map.t_utf71 = 11;
+  con->outbuf->append(&data.Struct.map.t_utf71, sizeof(data.Struct.map.t_utf71));  
+  data.Struct.map.t_utf72 = 11;
+  con->outbuf->append(&data.Struct.map.t_utf72, sizeof(data.Struct.map.t_utf72));  
+  //data.Struct.map.nomitems[0] = 0;
+  //data.Struct.map.nomitems[1] = 0;
+  //data.Struct.map.nomitems[2] = 0;
+  data.Struct.map.nomitems = 2;
   con->outbuf->append(&data.Struct.map.nomitems, sizeof(data.Struct.map.nomitems));  
   data.Struct.map.length1[0] = 0; //4byte
   data.Struct.map.length1[1] = 0;
@@ -269,11 +263,12 @@ cass_encode_data(Connection *con) {
   data.Struct.map.length4[3] = strlen(con->pass); //4byte
   con->outbuf->append(&data.Struct.map.length4, sizeof(data.Struct.map.length4));
   con->outbuf->snprintf(strlen(con->pass), "%s", con->pass);  
-  data.Struct.t_stop = 0; //4byte
+  data.Struct.t_stop = 0; //1byte
   con->outbuf->append(&data.Struct.t_stop, sizeof(data.Struct.t_stop));
   data.t_stop = 0;
   con->outbuf->append(&data.t_stop, sizeof(data.t_stop));
   //con->outbuf->append(&data, sizeof(cass_data));  
+
 }
  /*
 static void cass_encode_CALL(Connection *con) {
