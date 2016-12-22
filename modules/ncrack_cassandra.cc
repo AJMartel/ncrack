@@ -145,31 +145,32 @@ typedef struct cass_CALL {
 
   //u_char version[0]; /*0x8001*/
   uint16_t version[1];
-  uint16_t call_id;
-  uint16_t length;
-  u_char method[5];
-  u_char sequence_id[0];
+  uint8_t zero;
+  uint8_t call_id;
+  uint8_t length[4];
+  //u_char method[5];
+  uint16_t sequence_id[2];
 };
 
 typedef struct cass_data {
   
   uint16_t t_struct;
-  uint16_t field_id[1];
+  uint16_t field_id;
     union {  
       struct  {
-        uint16_t t_map;
+        uint8_t t_map;
         uint16_t field_id;
           union{    
             struct  {
-              uint16_t t_utf7;
-              uint16_t nomitems[4];
-              int8_t length1[4];
+              int t_utf7;
+              uint8_t nomitems[4];
+              uint8_t length1[4];
               u_char string1[8];
-              int8_t length2[4];
+              uint8_t length2[4];
               char* string2;
-              int8_t length3[4];
+              uint8_t length3[4];
               u_char string3[8];
-              int8_t length4[4];
+              uint8_t length4[4];
               char* string4;
                 } map;
               };
@@ -202,32 +203,44 @@ static void
 cass_encode_CALL(Connection *con) {
   cass_CALL call;
   
-  call.version[0] = 0x8001;
+  call.version[0] = 0x0180; //2byte
+  con->outbuf->append(&call.version, sizeof(call.version));
+  call.zero = 0;
+  con->outbuf->append(&call.zero, sizeof(call.zero));
   call.call_id = 1;
-  call.length = 4;
-  strncpy((char* )&call.method[0], "login", 5);
-  con->outbuf->append(&call, sizeof(cass_CALL));
-  con->outbuf->snprintf(4,"%c%c%c%c", 0, 0, 0, 0);
-  //call.sequence_id=0;
-  //memset(call.sequence_id, 0, 4);
-  //con->outbuf->append(&call, sizeof(cass_CALL));
-//  con->outbuf->snprintf(5, "login");
+  con->outbuf->append(&call.call_id, sizeof(call.call_id));
+  call.length[0] = 0;
+  call.length[1] = 0;
+  call.length[2] = 0;
+  call.length[3] = 5;
+  con->outbuf->append(&call.length, sizeof(call.length));
+  con->outbuf->snprintf(5, "login");  
+  //strncpy((char* )&call.method[0], "login", 5);
+  call.sequence_id[0]=0;
+  call.sequence_id[1]=0;
+  call.sequence_id[2]=0;
+  call.sequence_id[3]=0;
+  con->outbuf->append(&call.sequence_id, sizeof(call.sequence_id));
 }
 static void
 cass_encode_data(Connection *con) {
   cass_data data;
   
-  data.t_struct = 0; //T_STRUCT (12)=1byte
+  data.t_struct = 12; //T_STRUCT (12)=1byte
   con->outbuf->append(&data.t_struct, sizeof(data.t_struct));  
-  data.field_id[0] = 0; // Field Id: 1 =2byte
-  //data.field_id[1] = 1; // Field Id: 1 =2byte
+  data.field_id = 1; // Field Id: 1 =2byte
   con->outbuf->append(&data.field_id, sizeof(data.field_id));  
-  data.Struct.t_map = 0; // T_MAP (13) =1byte
+  data.Struct.t_map = 13; // T_MAP (13) =1byte
   con->outbuf->append(&data.Struct.t_map, sizeof(data.Struct.t_map));  
   data.Struct.field_id = 1;
   con->outbuf->append(&data.Struct.field_id, sizeof(data.Struct.field_id));  
-  //data.Struct.map.nomitems[4] = 2;// 4 bytes [number of map items]  
-  memset(data.Struct.map.nomitems, 0, 2);
+  data.Struct.map.t_utf7 = 11;
+  
+  con->outbuf->append(&data.Struct.map.t_utf7, sizeof(data.Struct.map.t_utf7));  
+  data.Struct.map.nomitems[0] = 0;
+  data.Struct.map.nomitems[1] = 0;
+  data.Struct.map.nomitems[2] = 0;
+  data.Struct.map.nomitems[3] = 2;
   con->outbuf->append(&data.Struct.map.nomitems, sizeof(data.Struct.map.nomitems));  
   data.Struct.map.length1[0] = 0; //4byte
   data.Struct.map.length1[1] = 0;
