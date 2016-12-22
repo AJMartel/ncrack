@@ -144,7 +144,7 @@ enum states { CASS_INIT, CASS_USER };
 typedef struct cass_CALL {
 
   //u_char version[0]; /*0x8001*/
-  uint16_t version;
+  uint16_t version[1];
   uint16_t call_id;
   uint16_t length;
   u_char method[5];
@@ -154,7 +154,7 @@ typedef struct cass_CALL {
 typedef struct cass_data {
   
   uint16_t t_struct;
-  uint16_t field_id;
+  uint16_t field_id[1];
     union {  
       struct  {
         uint16_t t_map;
@@ -162,20 +162,20 @@ typedef struct cass_data {
           union{    
             struct  {
               uint16_t t_utf7;
-              uint16_t nomitems;
-              uint16_t length1;
+              uint16_t nomitems[4];
+              int8_t length1[4];
               u_char string1[8];
-              uint16_t length2;
+              int8_t length2[4];
               char* string2;
-              uint16_t length3;
+              int8_t length3[4];
               u_char string3[8];
-              uint16_t length4;
+              int8_t length4[4];
               char* string4;
                 } map;
               };
-        uint16_t t_stop; 
+        uint8_t t_stop; 
       } Struct;
-    uint16_t t_stop;
+    uint8_t t_stop;
 };
 };
 
@@ -202,7 +202,7 @@ static void
 cass_encode_CALL(Connection *con) {
   cass_CALL call;
   
-  call.version = 0x8001;
+  call.version[0] = 0x8001;
   call.call_id = 1;
   call.length = 4;
   strncpy((char* )&call.method[0], "login", 5);
@@ -219,28 +219,41 @@ cass_encode_data(Connection *con) {
   
   data.t_struct = 0; //T_STRUCT (12)=1byte
   con->outbuf->append(&data.t_struct, sizeof(data.t_struct));  
-  data.field_id = 1; // Field Id: 1 =2byte
+  data.field_id[0] = 0; // Field Id: 1 =2byte
+  //data.field_id[1] = 1; // Field Id: 1 =2byte
   con->outbuf->append(&data.field_id, sizeof(data.field_id));  
   data.Struct.t_map = 0; // T_MAP (13) =1byte
   con->outbuf->append(&data.Struct.t_map, sizeof(data.Struct.t_map));  
   data.Struct.field_id = 1;
   con->outbuf->append(&data.Struct.field_id, sizeof(data.Struct.field_id));  
-  data.Struct.map.nomitems = 2; // 4 bytes [number of map items]  
+  //data.Struct.map.nomitems[4] = 2;// 4 bytes [number of map items]  
+  memset(data.Struct.map.nomitems, 0, 2);
   con->outbuf->append(&data.Struct.map.nomitems, sizeof(data.Struct.map.nomitems));  
-  data.Struct.map.length1= 8; //4byte
+  data.Struct.map.length1[0] = 0; //4byte
+  data.Struct.map.length1[1] = 0;
+  data.Struct.map.length1[2] = 0;
+  data.Struct.map.length1[3] = strlen("username");
   con->outbuf->append(&data.Struct.map.length1, sizeof(data.Struct.map.length1));  
   strncpy((char * )&data.Struct.map.string1[0],"username",8);  
   con->outbuf->append(&data.Struct.map.string1, sizeof(data.Struct.map.string1));  
-  data.Struct.map.length2 = strlen(con->user);
+  data.Struct.map.length2[0] = 0;
+  data.Struct.map.length2[1] = 0;
+  data.Struct.map.length2[2] = 0;
+  data.Struct.map.length2[3] = strlen(con->user);
   con->outbuf->append(&data.Struct.map.length2, sizeof(data.Struct.map.length2));  
-
   con->outbuf->snprintf(strlen(con->user), "%s", con->user);  
-  //data.Struct.map.string2 = con->user;
-  data.Struct.map.length3 = 8; //4byte
+
+  data.Struct.map.length3[0] = 0; //4byte
+  data.Struct.map.length3[1] = 0;
+  data.Struct.map.length3[2] = 0;
+  data.Struct.map.length3[3] = strlen("password");
   con->outbuf->append(&data.Struct.map.length3, sizeof(data.Struct.map.length3));  
   strncpy((char * )&data.Struct.map.string3[0],"password",8);  
   con->outbuf->append(&data.Struct.map.string3, sizeof(data.Struct.map.string3));  
-  data.Struct.map.length4 = strlen(con->pass); //4byte
+  data.Struct.map.length4[0] = 0; //4byte
+  data.Struct.map.length4[1] = 0; //4byte
+  data.Struct.map.length4[2] = 0; //4byte
+  data.Struct.map.length4[3] = strlen(con->pass); //4byte
   con->outbuf->append(&data.Struct.map.length4, sizeof(data.Struct.map.length4));
   con->outbuf->snprintf(strlen(con->pass), "%s", con->pass);  
   data.Struct.t_stop = 0; //4byte
