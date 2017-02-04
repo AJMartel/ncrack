@@ -152,7 +152,7 @@ typedef struct cass_CALL {
 
 typedef struct cass_data {
   
-  uint16_t t_struct;
+  uint8_t t_struct;
   uint16_t field_id;
   uint8_t t_stop;
     struct {
@@ -160,9 +160,9 @@ typedef struct cass_data {
       uint16_t field_id;
       uint8_t t_stop;
       struct {
-        int t_utf71;
-        int t_utf72;
-        uint16_t nomitems;
+        uint16_t t_utf7;
+        //int t_utf72;
+        uint32_t nomitems;
         uint8_t length1[4];
         u_char string1[8];
         uint8_t length2[4];
@@ -227,10 +227,10 @@ cass_encode_data(Connection *con) {
   con->outbuf->append(&data.Struct.t_map, sizeof(data.Struct.t_map));  
   data.Struct.field_id = 1;
   con->outbuf->append(&data.Struct.field_id, sizeof(data.Struct.field_id));  
-  data.Struct.map.t_utf71 = 11;
-  con->outbuf->append(&data.Struct.map.t_utf71, sizeof(data.Struct.map.t_utf71));  
-  data.Struct.map.t_utf72 = 11;
-  con->outbuf->append(&data.Struct.map.t_utf72, sizeof(data.Struct.map.t_utf72));  
+  data.Struct.map.t_utf7 = 11;
+  con->outbuf->append(&data.Struct.map.t_utf7, sizeof(data.Struct.map.t_utf7));  
+  //data.Struct.map.t_utf72 = 11;
+  //con->outbuf->append(&data.Struct.map.t_utf72, sizeof(data.Struct.map.t_utf72));  
   //data.Struct.map.nomitems[0] = 0;
   //data.Struct.map.nomitems[1] = 0;
   //data.Struct.map.nomitems[2] = 0;
@@ -263,7 +263,7 @@ cass_encode_data(Connection *con) {
   data.Struct.map.length4[3] = strlen(con->pass); //4byte
   con->outbuf->append(&data.Struct.map.length4, sizeof(data.Struct.map.length4));
   con->outbuf->snprintf(strlen(con->pass), "%s", con->pass);  
-  data.Struct.t_stop = 0; //1byte
+  data.Struct.t_stop = 0; //2->1byte
   con->outbuf->append(&data.Struct.t_stop, sizeof(data.Struct.t_stop));
   data.t_stop = 0;
   con->outbuf->append(&data.t_stop, sizeof(data.t_stop));
