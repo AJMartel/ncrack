@@ -136,7 +136,7 @@ extern void ncrack_module_end(nsock_pool nsp, void *mydata);
 
 static int cass_loop_read(nsock_pool nsp, Connection *con);
 static void cass_encode_CALL(Connection *con);
-//static void cass_encode_data(Connection *con);
+static void cass_encode_data(Connection *con);
     
 
 enum states { CASS_INIT, CASS_USER };
@@ -173,23 +173,24 @@ typedef struct cass_data {
 };
 
 
+typedef struct cass_info {
+bool thriftpacket; //true if the packet that is received is Thrift
+} cass_info;
   
 static int
 cass_loop_read(nsock_pool nsp, Connection *con)
 {
-
-  if ((con->inbuf == NULL) || !(memsearch((const char *)con->inbuf->get_dataptr(),"\r\n",con->inbuf->get_len()))) {
-    nsock_read(nsp, con->niod, ncrack_read_handler, CASS_TIMEOUT, con);
-    return -1;
-    printf("step1");
-  }
-
-  if (memsearch((const char *)con->inbuf->get_dataptr(),"Username and/or password are incorrect",con->inbuf->get_len()))
-    return 1;
-    printf("step2");
-
+//  if ((con->inbuf == NULL) || !(memsearch((const char *)con->inbuf->get_dataptr(),"\r\n",con->inbuf->get_len()))) {
+  
+  if (con->inbuf == NULL || con->inbuf->get_len() > 50) {
+      nsock_read(nsp, con->niod, ncrack_read_handler, CASS_TIMEOUT, con);  
+      return -1;
+}
+    //if (memsearch((const char *)con->inbuf->get_dataptr(),"Username and/or password are incorrect",con->inbuf->get_len()))
+  else
   return 0;
 }
+
 
 static void
 cass_encode_CALL(Connection *con) {
@@ -207,7 +208,6 @@ cass_encode_CALL(Connection *con) {
   call.length[3] = 5;
   con->outbuf->append(&call.length, sizeof(call.length));
   con->outbuf->snprintf(5, "login");  
-  //strncpy((char* )&call.method[0], "login", 5);
   call.sequence_id[0]=0;
   call.sequence_id[1]=0;
   call.sequence_id[2]=0;
@@ -266,27 +266,8 @@ cass_encode_data(Connection *con) {
   con->outbuf->append(&data.Struct.t_stop, sizeof(data.Struct.t_stop));
   data.t_stop = 0;
   con->outbuf->append(&data.t_stop, sizeof(data.t_stop));
-  //con->outbuf->append(&data, sizeof(cass_data));  
 
 }
- /*
-static void cass_encode_CALL(Connection *con) {
-
-   // uint16_t u16;
-    
-    // cass_CALL call;
-    //cass.version = 0x8001;
-    con->outbuf->snprintf(2,"%c%c", 8, 1);
-    //cass.message_type = CALL(1);
-    con->outbuf->snprintf(1, "%c", 1);
-    //cass.length = 5;
-    con->outbuf->snprintf(4,"%c%c%c%c",0,0,0,5);
-    //cass.method = login;
-    con->outbuf->snprintf(5, "login");  
-    //cass.sequence_id = 0;
-    con->outbuf->snprintf(4,"%c%c%c%c",0,0,0,0);
-
-  }*/
 void
 ncrack_cassandra(nsock_pool nsp, Connection *con)
 {
@@ -296,29 +277,30 @@ ncrack_cassandra(nsock_pool nsp, Connection *con)
   switch(con->state)
   {
     case CASS_INIT:
-/*
+
      if (!con->login_attempts) {
-      if ((cass_loop_read(nsp, con)) = 0) {
+      if ((cass_loop_read(nsp, con)) == 0) {
         break;
       }
     }
-
+/*
     con->state = CASS_USER;
 
     delete con->inbuf;
     con->inbuf = NULL;
-*/
-    if (con->outbuf)
-      delete con->outbuf;
+*/  
+    //if (con->outbuf)
+      //delete con->outbuf;
+    con->state = CASS_USER;    
     con->outbuf = new Buf();
     cass_encode_CALL(con);
     cass_encode_data(con);
     nsock_write(nsp, nsi, ncrack_write_handler, CASS_TIMEOUT, con, (const char *)con->outbuf->get_dataptr(), con->outbuf->get_len());
     break;
 
-  case CASS_USER: 
+    case CASS_USER: 
 
-    if ((ret = cass_loop_read(nsp, con)) < 0)
+    if (ret < 0)
       break;
 
     if (ret == 0)
