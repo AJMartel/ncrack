@@ -180,15 +180,12 @@ bool thriftpacket; //true if the packet that is received is Thrift
 static int
 cass_loop_read(nsock_pool nsp, Connection *con)
 {
-//  if ((con->inbuf == NULL) || !(memsearch((const char *)con->inbuf->get_dataptr(),"\r\n",con->inbuf->get_len()))) {
-  
-  if (con->inbuf == NULL || con->inbuf->get_len() > 50) {
-      nsock_read(nsp, con->niod, ncrack_read_handler, CASS_TIMEOUT, con);  
+  if ((con->inbuf == NULL) || !(memsearch((const char *)con->inbuf->get_dataptr(),"\r\n",con->inbuf->get_len()))) {  
       return -1;
 }
-    //if (memsearch((const char *)con->inbuf->get_dataptr(),"Username and/or password are incorrect",con->inbuf->get_len()))
-  else
-  return 0;
+    if (memsearch((const char *)con->inbuf->get_dataptr(),"Username and/or password are incorrect",con->inbuf->get_len()))
+      return 1;
+    return 0;
 }
 
 
@@ -273,7 +270,8 @@ ncrack_cassandra(nsock_pool nsp, Connection *con)
 {
   int ret;
   nsock_iod nsi = con->niod;
-
+  cass_info *info = NULL;
+  info = 
   switch(con->state)
   {
     case CASS_INIT:
@@ -300,7 +298,7 @@ ncrack_cassandra(nsock_pool nsp, Connection *con)
 
     case CASS_USER: 
 
-    if (ret < 0)
+    if ((ret = cass_loop_read(nsp,con)) < 0)
       break;
 
     if (ret == 0)
