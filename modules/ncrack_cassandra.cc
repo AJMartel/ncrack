@@ -172,25 +172,20 @@ typedef struct cass_data {
       } Struct;
 };
 
-typedef struct cass_info {
-  int thrift;
-} cass_info;
 
 static int
 cass_loop_read(nsock_pool nsp, Connection *con)
 {
-  /*cass_info *info = NULL;
-  con->misc_info = (cass_info *)safe_zalloc(sizeof(cass_info));
-  info = (cass_info *) con->misc_info;
-  info->thrift = 0;
-  
-    if ( info->thrift == 0) {
-      if ((memsearch((const char *)con->inbuf->get_dataptr(),"\r\n",con->inbuf->get_len()))) {  
-          info->thrift = 1;  
-        }
-      } */
-    if ((con->inbuf == NULL) || !(memsearch((const char *)con->inbuf->get_dataptr(),"login",con->inbuf->get_len()))) {
-      nsock_read(nsp, con->niod, ncrack_read_handler, CASS_TIMEOUT, con);
+    char last_bytes[5];
+    last_bytes[0] = 0;
+    last_bytes[1] = 0;
+    last_bytes[2] = 0;
+    last_bytes[3] = 0;
+    last_bytes[4] = 0;
+
+    if ((con->inbuf == NULL) || !(memsearch((const char *)con->inbuf->get_dataptr(), last_bytes  ,con->inbuf->get_len()))) {
+
+       nsock_read(nsp, con->niod, ncrack_read_handler, CASS_TIMEOUT, con);
       return -1;
     }
     if (memsearch((const char *)con->inbuf->get_dataptr(),"Username and/or password are incorrect",con->inbuf->get_len())) {
@@ -281,31 +276,32 @@ ncrack_cassandra(nsock_pool nsp, Connection *con)
 {
   int ret;
   nsock_iod nsi = con->niod;
-  cass_info *info = NULL;
-  con->misc_info = (cass_info *)safe_zalloc(sizeof(cass_info));
-  info = (cass_info *) con->misc_info;
-  info->thrift = 0;
   switch(con->state)
   {
     case CASS_INIT:
-
-    if (!con->login_attempts) {
-      if ((cass_loop_read(nsp, con)) < 0) {
+      printf("step1");
+      if (!con->login_attempts) {
+        printf("step2");
+      
+        if ((cass_loop_read(nsp, con)) < 0) {
         break;
+        }
       }
-    }
-    con->state = CASS_USER;    
-    con->outbuf = new Buf();
-    cass_encode_CALL(con);
-    cass_encode_data(con);
-    nsock_write(nsp, nsi, ncrack_write_handler, CASS_TIMEOUT, con, (const char *)con->outbuf->get_dataptr(), con->outbuf->get_len());
-    break;
+      printf("step3");
+      con->state = CASS_USER;    
+      if (con->outbuf)
+        delete con->outbuf;
+      con->outbuf = new Buf();
+      cass_encode_CALL(con);
+      cass_encode_data(con);
+      nsock_write(nsp, nsi, ncrack_write_handler, CASS_TIMEOUT, con, (const char *)con->outbuf->get_dataptr(), con->outbuf->get_len());
+      break;
 
     case CASS_USER: 
 
     if ((ret = cass_loop_read(nsp,con)) < 0)
+      printf("step4");
       break;
-
     if (ret == 0)
       con->auth_success = true;
 
