@@ -172,20 +172,30 @@ typedef struct cass_data {
       } Struct;
 };
 
-
 typedef struct cass_info {
-bool thriftpacket; //true if the packet that is received is Thrift
+  int thrift;
 } cass_info;
-  
+
 static int
 cass_loop_read(nsock_pool nsp, Connection *con)
 {
-  if ((con->inbuf == NULL) || !(memsearch((const char *)con->inbuf->get_dataptr(),"\r\n",con->inbuf->get_len()))) {  
+  /*cass_info *info = NULL;
+  con->misc_info = (cass_info *)safe_zalloc(sizeof(cass_info));
+  info = (cass_info *) con->misc_info;
+  info->thrift = 0;*/
+  /*int i = 0; 
+    if (i == 0) {
+      if ((memsearch((const char *)con->inbuf->get_dataptr(),"\r\n",con->inbuf->get_len()))) {  
+          i = 1;  
+        }
+      }*/ 
+    if ((con->inbuf == NULL)|| !(memsearch((const char *)con->inbuf->get_dataptr(),"\r\n",con->inbuf->get_len()))) {
       return -1;
-}
-    if (memsearch((const char *)con->inbuf->get_dataptr(),"Username and/or password are incorrect",con->inbuf->get_len()))
+    }
+    if (memsearch((const char *)con->inbuf->get_dataptr(),"Username and/or password are incorrect",con->inbuf->get_len())) {
       return 1;
-    return 0;
+    }
+  return 0;
 }
 
 
@@ -271,24 +281,18 @@ ncrack_cassandra(nsock_pool nsp, Connection *con)
   int ret;
   nsock_iod nsi = con->niod;
   cass_info *info = NULL;
-  info = 
+  con->misc_info = (cass_info *)safe_zalloc(sizeof(cass_info));
+  info = (cass_info *) con->misc_info;
+  info->thrift = 0;
   switch(con->state)
   {
     case CASS_INIT:
 
-     if (!con->login_attempts) {
-      if ((cass_loop_read(nsp, con)) == 0) {
+    if (!con->login_attempts) {
+      if ((cass_loop_read(nsp, con)) < 0) {
         break;
       }
     }
-/*
-    con->state = CASS_USER;
-
-    delete con->inbuf;
-    con->inbuf = NULL;
-*/  
-    //if (con->outbuf)
-      //delete con->outbuf;
     con->state = CASS_USER;    
     con->outbuf = new Buf();
     cass_encode_CALL(con);
