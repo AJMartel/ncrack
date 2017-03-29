@@ -276,9 +276,11 @@ ncrack_cassandra(nsock_pool nsp, Connection *con)
 {
   int ret;
   nsock_iod nsi = con->niod;
+
   switch(con->state)
   {
     case CASS_INIT:
+
       printf("step1");
       if (!con->login_attempts) {
         printf("step2");
@@ -304,7 +306,7 @@ ncrack_cassandra(nsock_pool nsp, Connection *con)
       break;
     if (ret == 0)
       con->auth_success = true;
-
+      printf("step5");
     con->state = CASS_INIT;
 
     return ncrack_module_end(nsp, con);
