@@ -182,14 +182,15 @@ cass_loop_read(nsock_pool nsp, Connection *con)
   /*cass_info *info = NULL;
   con->misc_info = (cass_info *)safe_zalloc(sizeof(cass_info));
   info = (cass_info *) con->misc_info;
-  info->thrift = 0;*/
-  /*int i = 0; 
-    if (i == 0) {
+  info->thrift = 0;
+  
+    if ( info->thrift == 0) {
       if ((memsearch((const char *)con->inbuf->get_dataptr(),"\r\n",con->inbuf->get_len()))) {  
-          i = 1;  
+          info->thrift = 1;  
         }
-      }*/ 
-    if ((con->inbuf == NULL)|| !(memsearch((const char *)con->inbuf->get_dataptr(),"\r\n",con->inbuf->get_len()))) {
+      } */
+    if ((con->inbuf == NULL) || !(memsearch((const char *)con->inbuf->get_dataptr(),"login",con->inbuf->get_len()))) {
+      nsock_read(nsp, con->niod, ncrack_read_handler, CASS_TIMEOUT, con);
       return -1;
     }
     if (memsearch((const char *)con->inbuf->get_dataptr(),"Username and/or password are incorrect",con->inbuf->get_len())) {
