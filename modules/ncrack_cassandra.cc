@@ -176,20 +176,10 @@ typedef struct cass_data {
 static int
 cass_loop_read(nsock_pool nsp, Connection *con)
 {
-    char last_bytes[5];
-    last_bytes[0] = 0;
-    last_bytes[1] = 0;
-    last_bytes[2] = 0;
-    last_bytes[3] = 0;
-    last_bytes[4] = 0;
-
-    if ((con->inbuf == NULL) || !(memsearch((const char *)con->inbuf->get_dataptr(), last_bytes  ,con->inbuf->get_len()))) {
+    if ((con->inbuf == NULL) || !(con->inbuf->get_len()<18)) {
 
        nsock_read(nsp, con->niod, ncrack_read_handler, CASS_TIMEOUT, con);
       return -1;
-    }
-    if (memsearch((const char *)con->inbuf->get_dataptr(),"Username and/or password are incorrect",con->inbuf->get_len())) {
-      return 1;
     }
   return 0;
 }
@@ -274,21 +264,12 @@ cass_encode_data(Connection *con) {
 void
 ncrack_cassandra(nsock_pool nsp, Connection *con)
 {
-  int ret;
   nsock_iod nsi = con->niod;
 
   switch(con->state)
   {
     case CASS_INIT:
 
-      printf("step1");
-      if (!con->login_attempts) {
-        printf("step2");
-      
-        if ((cass_loop_read(nsp, con)) < 0) {
-        break;
-        }
-      }
       printf("step3");
       con->state = CASS_USER;    
       if (con->outbuf)
@@ -301,15 +282,18 @@ ncrack_cassandra(nsock_pool nsp, Connection *con)
 
     case CASS_USER: 
 
-    if ((ret = cass_loop_read(nsp,con)) < 0)
+    if (cass_loop_read(nsp,con) < 0)
       printf("step4");
       break;
-    if (ret == 0)
+    if ((const char *)con->outbuf->get_dataptr()[17] == '\x0c')//find the 18th byte and compare it to 0c
+   ; 
+    else if ((const char *)con->outbuf->get_dataptr()[17] == '\x00')//find the 18th byte and compare it to 00
       con->auth_success = true;
       printf("step5");
     con->state = CASS_INIT;
 
     return ncrack_module_end(nsp, con);
   }
+}
 }
 
