@@ -292,7 +292,7 @@ ncrack_cassandra(nsock_pool nsp, Connection *con)
     if (cass_loop_read(nsp,con) < 0){
       break;
     }
-    //The difference between the possitive and negative reply(depending on the authentication resides on the 22th byte
+    //The difference of the successful and failed authentication resides on the 22th byte of the reply packet
     const char *p = (const char *)con->inbuf->get_dataptr();
     if (p[21] == '\x0c')//find the 22th byte and compare it to 0c
           printf("%x", p[21]); 
