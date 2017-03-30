@@ -143,6 +143,7 @@ enum states { CASS_INIT, CASS_USER };
 
 typedef struct cass_CALL {
 
+  uint8_t sok[4];
   uint16_t version[1];
   uint8_t zero;
   uint8_t call_id;
@@ -176,7 +177,7 @@ typedef struct cass_data {
 static int
 cass_loop_read(nsock_pool nsp, Connection *con)
 {
-    if ((con->inbuf == NULL) || (con->inbuf->get_len()<18)) {
+    if ((con->inbuf == NULL) || (con->inbuf->get_len()<22)) {
 
        nsock_read(nsp, con->niod, ncrack_read_handler, CASS_TIMEOUT, con);
   return -1;
@@ -188,7 +189,11 @@ cass_loop_read(nsock_pool nsp, Connection *con)
 static void
 cass_encode_CALL(Connection *con) {
   cass_CALL call;
-  
+  call.sok[0] = 0;
+  call.sok[1] = 0;
+  call.sok[2] = 0;
+  call.sok[3] = 63 + strlen(con->user) + strlen(con->pass) ;
+  con->outbuf->append(&call.sok, sizeof(call.sok));
   call.version[0] = 0x0180; //2byte
   con->outbuf->append(&call.version, sizeof(call.version));
   call.zero = 0;
@@ -270,8 +275,10 @@ ncrack_cassandra(nsock_pool nsp, Connection *con)
   {
     case CASS_INIT:
 
-      printf("step3");
+      printf("step2");
       con->state = CASS_USER;    
+      delete con->inbuf;
+        con->inbuf = NULL;
       if (con->outbuf)
         delete con->outbuf;
       con->outbuf = new Buf();
@@ -281,16 +288,16 @@ ncrack_cassandra(nsock_pool nsp, Connection *con)
       break;
 
     case CASS_USER: 
-
+    printf("step3\n");
+    //sleep(5);
     if (cass_loop_read(nsp,con) < 0)
-      printf("step4");
+      printf("step4\n");
       break;
     const char *p = (const char *)con->outbuf->get_dataptr();
-    if (p[17] == '\x0c')//find the 18th byte and compare it to 0c
-   ; 
-    else if (p[17] == '\x00')//find the 18th byte and compare it to 00
+    if (p[21] == '\x0c')//find the 18th byte and compare it to 0c
+          printf("step5"); 
+    else if (p[21] == '\x00')//find the 18th byte and compare it to 00
       con->auth_success = true;
-      printf("step5");
     con->state = CASS_INIT;
 
     return ncrack_module_end(nsp, con);
