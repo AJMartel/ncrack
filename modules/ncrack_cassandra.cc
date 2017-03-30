@@ -153,11 +153,11 @@ typedef struct cass_CALL {
 typedef struct cass_data {
   
   uint8_t t_struct;
-  uint16_t field_id;
+  u_char field_id[2];
   uint8_t t_stop;
     struct {
       uint8_t t_map;
-      uint16_t field_id;
+      u_char field_id[2];
       uint8_t t_stop;
       struct {
         uint8_t t_utf7;
@@ -176,10 +176,10 @@ typedef struct cass_data {
 static int
 cass_loop_read(nsock_pool nsp, Connection *con)
 {
-    if ((con->inbuf == NULL) || !(con->inbuf->get_len()<18)) {
+    if ((con->inbuf == NULL) || (con->inbuf->get_len()<18)) {
 
        nsock_read(nsp, con->niod, ncrack_read_handler, CASS_TIMEOUT, con);
-      return -1;
+  return -1;
     }
   return 0;
 }
@@ -213,16 +213,16 @@ cass_encode_data(Connection *con) {
   
   data.t_struct = 12; //T_STRUCT (12)=1byte
   con->outbuf->append(&data.t_struct, sizeof(data.t_struct));  
-  //data.field_id = 1; // Field Id: 1 =2byte
+  data.field_id[0] = 0;
+  data.field_id[1] = 1; // Field Id: 1 =2byte
   con->outbuf->append(&data.field_id, sizeof(data.field_id));  
   data.Struct.t_map = 13; // T_MAP (13) =1byte
   con->outbuf->append(&data.Struct.t_map, sizeof(data.Struct.t_map));  
-  //data.Struct.field_id = 1;
+  data.Struct.field_id[0] = 0;
+  data.Struct.field_id[1] = 1;
   con->outbuf->append(&data.Struct.field_id, sizeof(data.Struct.field_id));  
   data.Struct.map.t_utf7 = 11;
   con->outbuf->append(&data.Struct.map.t_utf7, sizeof(data.Struct.map.t_utf7));   con->outbuf->append(&data.Struct.map.t_utf7, sizeof(data.Struct.map.t_utf7));  
-  //data.Struct.map.t_utf72 = 11;
-  //con->outbuf->append(&data.Struct.map.t_utf72, sizeof(data.Struct.map.t_utf72));  
   data.Struct.map.nomitems[0] = 0;
   data.Struct.map.nomitems[1] = 0;
   data.Struct.map.nomitems[2] = 0;
@@ -285,9 +285,10 @@ ncrack_cassandra(nsock_pool nsp, Connection *con)
     if (cass_loop_read(nsp,con) < 0)
       printf("step4");
       break;
-    if ((const char *)con->outbuf->get_dataptr()[17] == '\x0c')//find the 18th byte and compare it to 0c
+    const char *p = (const char *)con->outbuf->get_dataptr();
+    if (p[17] == '\x0c')//find the 18th byte and compare it to 0c
    ; 
-    else if ((const char *)con->outbuf->get_dataptr()[17] == '\x00')//find the 18th byte and compare it to 00
+    else if (p[17] == '\x00')//find the 18th byte and compare it to 00
       con->auth_success = true;
       printf("step5");
     con->state = CASS_INIT;
@@ -295,5 +296,5 @@ ncrack_cassandra(nsock_pool nsp, Connection *con)
     return ncrack_module_end(nsp, con);
   }
 }
-}
+
 
