@@ -290,12 +290,13 @@ ncrack_cassandra(nsock_pool nsp, Connection *con)
     case CASS_USER: 
     printf("step3\n");
     //sleep(5);
-    if (cass_loop_read(nsp,con) < 0)
+    if (cass_loop_read(nsp,con) < 0){
       printf("step4\n");
       break;
-    const char *p = (const char *)con->outbuf->get_dataptr();
+      }
+    const char *p = (const char *)con->inbuf->get_dataptr();
     if (p[21] == '\x0c')//find the 18th byte and compare it to 0c
-          printf("step5"); 
+          printf("%x", p[21]); 
     else if (p[21] == '\x00')//find the 18th byte and compare it to 00
       con->auth_success = true;
     con->state = CASS_INIT;
